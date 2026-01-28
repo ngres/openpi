@@ -1,3 +1,4 @@
+import math
 import abc
 from collections.abc import Callable, Mapping, Sequence
 import dataclasses
@@ -223,6 +224,7 @@ class DeltaActions(DataTransformFn):
 
         return data
 
+
 @dataclasses.dataclass(frozen=True)
 class SpaceTransformFn(DataTransformFn, abc.ABC):
     """Repacks the action or state into a different space."""
@@ -235,7 +237,8 @@ class SpaceTransformFn(DataTransformFn, abc.ABC):
 
     def __call__(self, data: DataDict) -> DataDict:
         if "actions" in data and self.action_index is not None:
-            data["actions"] = self._transform(data["actions"], self.action_index)
+            # actions are processed in chunks
+            data["actions"] = np.array([self._transform(a, self.action_index) for a in data["actions"]])
         if "state" in data and self.state_index is not None:
             data["state"] = self._transform(data["state"], self.state_index)
         return data
@@ -244,53 +247,128 @@ class SpaceTransformFn(DataTransformFn, abc.ABC):
     def _transform(self, data, idx):
         raise NotImplementedError
 
+
 @dataclasses.dataclass(frozen=True)
-class QuatToRotVec(SpaceTransformFn):
-    """Repacks quaternion actions into a rotational vector space.
-    
+class QuatToAxisAngle(SpaceTransformFn):
+    """Repacks quaternion actions into a axis-angle space.
+
     Assumes [x, y, z, w] and will transform it into [wx, wy, wz]
     """
 
     def _transform(self, data, idx):
         quat = data[..., idx : idx + 4]
-        rotvec = Rotation.from_quat(quat).as_rotvec()
-        return np.concatenate([data[..., :idx], rotvec, data[..., idx + 4:]], axis=-1)
+        axisangle = self._quat2axisangle(quat)
+        return np.concatenate([data[..., :idx], axisangle, data[..., idx + 4 :]], axis=-1)
+
+    def _quat2axisangle(self, quat: np.ndarray):
+        """
+        Converts quaternion to axis-angle format.
+        Returns a unit vector direction scaled by its angle in radians.
+
+        Adapted from https://github.com/ARISE-Initiative/robosuite/blob/eafb81f54ffc104f905ee48a16bb15f059176ad3/robosuite/utils/transform_utils.py#L490C1-L512C55
+
+        Args:
+            quat (np.array): (x,y,z,w) vec4 float angles
+
+        Returns:
+            np.array: (ax,ay,az) axis-angle exponential coordinates
+        """
+        assert quat.ndim == 1
+        assert quat.shape[-1] == 4
+        # clip quaternion
+        if quat[3] > 1.0:
+            quat[3] = 1.0
+        elif quat[3] < -1.0:
+            quat[3] = -1.0
+
+        den = np.sqrt(1.0 - quat[3] * quat[3])
+        if math.isclose(den, 0.0):
+            # This is (close to) a zero degree rotation, immediately return
+            return np.zeros(3)
+
+        return (quat[:3] * 2.0 * math.acos(quat[3])) / den
+
 
 @dataclasses.dataclass(frozen=True)
-class RotVecToQuat(SpaceTransformFn):
-    """Repacks rotational vector actions into a quaternion space.
-    
+class AxisAngleToQuat(SpaceTransformFn):
+    """Repacks axis-angle actions into a quaternion space.
+
     Assumes [wx, wy, wz] and will transform it into [x, y, z, w]
     """
 
     def _transform(self, data, idx):
-        rotvec = data[..., idx : idx + 3]
-        quat = Rotation.from_rotvec(rotvec).as_quat()
-        return np.concatenate([data[..., :idx], quat, data[..., idx + 3:]], axis=-1)
+        axisangle = data[..., idx : idx + 3]
+        quat = self._axisangle2quat(axisangle)
+        return np.concatenate([data[..., :idx], quat, data[..., idx + 3 :]], axis=-1)
+
+    def _axisangle2quat(self, vec):
+        """
+        Converts scaled axis-angle to quat.
+
+        Adapted from https://github.com/ARISE-Initiative/robosuite/blob/eafb81f54ffc104f905ee48a16bb15f059176ad3/robosuite/utils/transform_utils.py#L515-L538
+
+        Args:
+            vec (np.array): (ax,ay,az) axis-angle exponential coordinates
+
+        Returns:
+            np.array: (x,y,z,w) vec4 float angles
+        """
+        # Grab angle
+        angle = np.linalg.norm(vec)
+
+        # handle zero-rotation case
+        if math.isclose(angle, 0.0):
+            return np.array([0.0, 0.0, 0.0, 1.0])
+
+        # make sure that axis is a unit vector
+        axis = vec / angle
+
+        q = np.zeros(4)
+        q[3] = np.cos(angle / 2.0)
+        q[:3] = axis * np.sin(angle / 2.0)
+        return q
+
 
 @dataclasses.dataclass(frozen=True)
 class QuatToR6D(SpaceTransformFn):
     """Repacks quaternion actions into  the first two columns of a rotation matrix.
-    
+
     Assumes [x, y, z, w] and will transform it into [r00, r01, r02, r10, r11, r12]
     """
 
     def _transform(self, data, idx):
         x, y, z, w = data[..., idx : idx + 4]
 
-        return np.concatenate([data[..., :idx], np.array([1-2*(y*y+z*z), 2*(x*y+w*z), 2*(x*z-w*y), 2*(x*y-w*z), 1-2*(x*x+z*z), 2*(y*z+w*x)]), data[..., idx + 4:]], axis=-1)
+        return np.concatenate(
+            [
+                data[..., :idx],
+                np.array(
+                    [
+                        1 - 2 * (y * y + z * z),
+                        2 * (x * y + w * z),
+                        2 * (x * z - w * y),
+                        2 * (x * y - w * z),
+                        1 - 2 * (x * x + z * z),
+                        2 * (y * z + w * x),
+                    ]
+                ),
+                data[..., idx + 4 :],
+            ],
+            axis=-1,
+        )
+
 
 @dataclasses.dataclass(frozen=True)
 class R6DToQuat(SpaceTransformFn):
     """Repacks the first two columns of a rotation matrix into a quaternion space.
-    
+
     Assumes [r00, r01, r02, r10, r11, r12] and will transform it into [x, y, z, w]
     """
 
     def _transform(self, data, idx):
         d6 = data[..., idx : idx + 6]
         quat = self._six_d_to_quaternion_scipy(d6)
-        return np.concatenate([data[..., :idx], quat, data[..., idx + 6:]], axis=-1)
+        return np.concatenate([data[..., :idx], quat, data[..., idx + 6 :]], axis=-1)
 
     def _six_d_to_quaternion_scipy(self, d6):
         """
@@ -311,14 +389,14 @@ class R6DToQuat(SpaceTransformFn):
         # 2. Gram-Schmidt Orthogonalization
         # Normalize first vector
         b1 = a1 / np.linalg.norm(a1, axis=1, keepdims=True)
-        
+
         # Orthogonalize a2 relative to b1
         dot_product = np.sum(b1 * a2, axis=1, keepdims=True)
         u2 = a2 - dot_product * b1
-        
+
         # Normalize second vector
         b2 = u2 / np.linalg.norm(u2, axis=1, keepdims=True)
-        
+
         # Compute third vector (cross product)
         b3 = np.cross(b1, b2)
 
@@ -332,7 +410,7 @@ class R6DToQuat(SpaceTransformFn):
 
         # Return shape (4,) if input was (6,)
         return quat.flatten() if len(input_shape) == 1 else quat
-       
+
 
 @dataclasses.dataclass(frozen=True)
 class AbsoluteActions(DataTransformFn):

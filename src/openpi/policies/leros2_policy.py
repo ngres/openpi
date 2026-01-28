@@ -40,12 +40,14 @@ class LeROS2Inputs(transforms.DataTransformFn):
         # of image, e.g. wrist images, you can comment it out here and replace it with zeros like we do for the
         # right wrist image below.
 
-        base_image = _parse_image(data["observation.images.base"])
-        wrist_image = _parse_image(data["observation.images.wrist"])
+        base_image = _parse_image(data["images"]["base"])
+        wrist_image = _parse_image(data["images"]["wrist"])
 
         # Create inputs dict. Do not change the keys in the dict below.
         inputs = {
-            "state": data["state"],
+            # We ignore the joint states and only use the base position and orientation + gripper state
+            # [x.pos, y.pos, z.pos, x.quat, y.quat, z.quat, w.quat, gripper_state]
+            "state": data["state"][..., :8],
             "image": {
                 "base_0_rgb": base_image,
                 "left_wrist_0_rgb": wrist_image,

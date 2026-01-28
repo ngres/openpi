@@ -443,12 +443,14 @@ class LeROS2DataConfig(DataConfigFactory):
         repack_transforms = _transforms.Group(
             inputs=[
                 _transforms.RepackTransform(
-                    {   
-                        "observation.images.base": "observation.images.base",
-                        "observation.images.wrist": "observation.images.wrist",
+                    {
+                        "images": {
+                            "base": "observation.images.base",
+                            "wrist": "observation.images.wrist",
+                        },
                         "state": "observation.state",
                         "actions": "action",
-                        "prompt": "task"
+                        "prompt": "task",
                     }
                 )
             ]
@@ -465,17 +467,17 @@ class LeROS2DataConfig(DataConfigFactory):
             outputs=[leros2_policy.LeROS2Outputs()],
         )
 
+        # Convert quaternion to axis angle to align with libero
+        data_transforms = data_transforms.push(
+            inputs=[_transforms.QuatToAxisAngle(action_index=3, state_index=3)],
+            outputs=[_transforms.AxisAngleToQuat(action_index=3, state_index=3)],
+        )
+
         # One additional data transform: pi0 models are trained on delta actions (relative to the first
         # state in each action chunk). IF your data has ``absolute`` actions (e.g. target joint angles)
         # you can uncomment the following line to convert the actions to delta actions. The only exception
         # is for the gripper actions which are always absolute.
-        # In the example below, we would apply the delta conversion to the first 6 actions (joints) and
-        # leave the 7th action (gripper) unchanged, i.e. absolute.
-        # In Libero, the raw actions in the dataset are already delta actions, so we *do not* need to
-        # apply a separate delta conversion (that's why it's commented out). Choose whether to apply this
-        # transform based on whether your dataset uses ``absolute`` or ``delta`` actions out of the box.
-
-        delta_action_mask = _transforms.make_bool_mask(3, -4)
+        delta_action_mask = _transforms.make_bool_mask(6, -1)
         data_transforms = data_transforms.push(
             inputs=[_transforms.DeltaActions(delta_action_mask)],
             outputs=[_transforms.AbsoluteActions(delta_action_mask)],
@@ -491,7 +493,7 @@ class LeROS2DataConfig(DataConfigFactory):
             repack_transforms=repack_transforms,
             data_transforms=data_transforms,
             model_transforms=model_transforms,
-            action_sequence_keys=["action"], # LeRobot v3 uses "action" not "actions"
+            action_sequence_keys=["action"],  # LeRobot v3 uses "action" not "actions"
         )
 
 
@@ -712,14 +714,25 @@ _CONFIGS = [
             ),
         ),
     ),
-    # Fine-tuning LeRobot Ur10e configs
+    # Fine-tuning LeROS2 configs
     TrainConfig(
-        name="pi05_ur10e",
-        model=pi0_config.Pi0Config(pi05=True),
-        data=LeROS2DataConfig(repo_id="ngres/leros2-ur10e-cube", base_config=DataConfig(prompt_from_task=False)),
+        name="pi05_leros2",
+        data=LeROS2DataConfig(repo_id="ngres/leros2-ur10e-ycb-cube", base_config=DataConfig(prompt_from_task=False)),
+        model=pi0_config.Pi0Config(
+            paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora", pi05=True
+        ),
+        # The freeze filter defines which parameters should be frozen during training.
+        # We have a convenience function in the model config that returns the default freeze filter
+        # for the given model config for LoRA finetuning. Just make sure it matches the model config
+        # you chose above.
+        freeze_filter=pi0_config.Pi0Config(
+            paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora", pi05=True
+        ).get_freeze_filter(),
+        # Turn off EMA for LoRA finetuning.
+        ema_decay=None,
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
         num_train_steps=20_000,
-        batch_size=64,
+        batch_size=32,  # 32 works on the 5090 - may set it to 64 on the A100
     ),
     #
     # Fine-tuning Libero configs.

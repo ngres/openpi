@@ -122,21 +122,24 @@ def test_extract_prompt_from_task():
     with pytest.raises(ValueError, match="task_index=2 not found in task mapping"):
         transform({"task_index": 2})
 
+
 def _norm_quat(quat):
     x, y, z, w = quat
     if w < 0:
         x, y, z, w = -x, -y, -z, -w
     return np.array([x, y, z, w])
 
-def test_quat_to_rotvec():
-    q2r = _transforms.QuatToRotVec(action_index=0)
-    r2q = _transforms.RotVecToQuat(action_index=0)
+
+def test_quat_to_axis_angle():
+    q2r = _transforms.QuatToAxisAngle(action_index=0)
+    r2q = _transforms.AxisAngleToQuat(action_index=0)
     data = np.array([R.random().as_quat() for _ in range(100)])
     quat = r2q(q2r({"actions": data}))
     assert np.allclose(
         np.array([_norm_quat(q) for q in quat["actions"]]),
         np.array([_norm_quat(q) for q in data]),
     )
+
 
 def test_quat_to_r6d():
     q2r = _transforms.QuatToR6D(action_index=0)

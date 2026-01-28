@@ -14,6 +14,8 @@ from openpi_client import websocket_client_policy as _websocket_client_policy
 import tqdm
 import tyro
 
+# import rerun as rr
+
 LIBERO_DUMMY_ACTION = [0.0] * 6 + [-1.0]
 LIBERO_ENV_RESOLUTION = 256  # resolution used to render training data
 
@@ -35,7 +37,7 @@ class Args:
         "libero_spatial"  # Task suite. Options: libero_spatial, libero_object, libero_goal, libero_10, libero_90
     )
     num_steps_wait: int = 10  # Number of steps to wait for objects to stabilize i n sim
-    num_trials_per_task: int = 50  # Number of rollouts per task
+    num_trials_per_task: int = 4  # Number of rollouts per task
 
     #################################################################################################################
     # Utils
@@ -43,6 +45,10 @@ class Args:
     video_out_path: str = "data/libero/videos"  # Path to save videos
 
     seed: int = 7  # Random Seed (for reproducibility)
+
+    use_rerun: bool = False
+
+    rerun_out_path: str = "data/rerun/recordings"
 
 
 def eval_libero(args: Args) -> None:
@@ -56,6 +62,7 @@ def eval_libero(args: Args) -> None:
     logging.info(f"Task suite: {args.task_suite_name}")
 
     pathlib.Path(args.video_out_path).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(args.rerun_out_path).mkdir(parents=True, exist_ok=True)
 
     if args.task_suite_name == "libero_spatial":
         max_steps = 220  # longest training demo has 193 steps
@@ -100,7 +107,13 @@ def eval_libero(args: Args) -> None:
             t = 0
             replay_images = []
 
-            logging.info(f"Starting episode {task_episodes+1}...")
+            logging.info(f"Starting episode {task_episodes + 1}...")
+
+            if args.use_rerun:
+                rr.init(f"openpi_libero/task_{task_id}/episode_{task_episodes + 1}", spawn=False)
+                rr.set_time("step", sequence=0)
+                rr.log("base", rr.Transform3D(), rr.TransformAxes3D(1.0))
+
             while t < max_steps + args.num_steps_wait:
                 try:
                     # IMPORTANT: Do nothing for the first few timesteps because the simulator drops objects
@@ -142,10 +155,12 @@ def eval_libero(args: Args) -> None:
 
                         # Query model to get action
                         action_chunk = client.infer(element)["actions"]
-                        assert (
-                            len(action_chunk) >= args.replan_steps
-                        ), f"We want to replan every {args.replan_steps} steps, but policy only predicts {len(action_chunk)} steps."
+                        assert len(action_chunk) >= args.replan_steps, (
+                            f"We want to replan every {args.replan_steps} steps, but policy only predicts {len(action_chunk)} steps."
+                        )
                         action_plan.extend(action_chunk[: args.replan_steps])
+                        logging.info(f"\nState: {obs['robot0_eef_pos']} {_quat2axisangle(obs['robot0_eef_quat'])}")
+                        logging.info(f"\nAction Chunk: {action_chunk}")
 
                     action = action_plan.popleft()
 
@@ -155,6 +170,27 @@ def eval_libero(args: Args) -> None:
                         task_successes += 1
                         total_successes += 1
                         break
+
+                    if args.use_rerun:
+                        rr.set_time("step", sequence=t)
+                        rr.log(
+                            "base/current_pose",
+                            rr.Transform3D.from_fields(
+                                translation=obs["robot0_eef_pos"],
+                                rotation_axis_angle=rr.RotationQuat(
+                                    xyzw=obs["robot0_eef_quat"],
+                                ),
+                            ),
+                            rr.TransformAxes3D(0.5),
+                        )
+                        rr.log(
+                            "base/target_pose",
+                            rr.Transform3D.from_fields(
+                                translation=action[:3],
+                            ),
+                            rr.TransformAxes3D(0.5),
+                        )
+
                     t += 1
 
                 except Exception as e:
@@ -172,6 +208,10 @@ def eval_libero(args: Args) -> None:
                 [np.asarray(x) for x in replay_images],
                 fps=10,
             )
+
+            if args.use_rerun:
+                rrd_path = args.rerun_out_path / f"task_{task_id}_episode_{task_episodes + 1}.rrd"
+                rr.save(rrd_path)
 
             # Log current results
             logging.info(f"Success: {done}")
