@@ -27,11 +27,16 @@ def main(args: Args) -> None:
         host=args.host,
         port=args.port,
     )
-    logging.info(f"Server metadata: {ws_client_policy.get_server_metadata()}")
 
-    _metadata = ws_client_policy.get_server_metadata()
+    metadata = ws_client_policy.get_server_metadata()
+    logging.info(f"Server metadata: {metadata}")
+
+    robot = URe(config=UReConfig())
+
+    robot.connect()
+
     runtime = _runtime.Runtime(
-        environment=_env.LeRobotEnvironment(robot=URe(config=UReConfig())),
+        environment=_env.LeRobotEnvironment(robot=robot),
         agent=_policy_agent.PolicyAgent(
             policy=action_chunk_broker.ActionChunkBroker(
                 policy=ws_client_policy,

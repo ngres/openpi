@@ -3,7 +3,7 @@ name = "openpi"
 version = "0.1.0"
 description = "Physical Intelligence open source repo"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = { file = "LICENSE" }
 dependencies = [
     "augmax>=0.3.4",
@@ -13,7 +13,7 @@ dependencies = [
     "flatbuffers>=24.3.25",
     "flax==0.10.2",
     "fsspec[gcs]>=2024.6.0",
-    "gym-aloha>=0.1.1",
+ #   "gym-aloha>=0.1.1",
     "imageio>=2.36.1",
     "jax[cuda12]==0.5.3",
     "jaxtyping==0.2.36",
@@ -55,55 +55,16 @@ dev = [
     "matplotlib>=3.10.0",
     "pynvml>=12.0.0",
 ]
-rlds = [
-    "dlimp",
-    "tensorflow-cpu==2.15.0",
-    "tensorflow-datasets==4.9.9",
+leros2 = [
+    "lerobot-robot-ure",
 ]
 
 [tool.uv]
 override-dependencies = ["ml-dtypes==0.4.1", "tensorstore==0.1.74"]
 
-[[tool.uv.dependency-metadata]]
-name = "lerobot"
-version = "0.4.3"  # Match the version you are installing
-requires-dist = [
-  # Hugging Face dependencies
-    "datasets>=4.0.0,<4.2.0",
-    "diffusers>=0.27.2,<0.36.0",
-    "huggingface-hub[hf-transfer,cli]>=0.34.2,<0.36.0",
-    "accelerate>=1.10.0,<2.0.0",
-
-    # Core dependencies
-    "setuptools>=71.0.0,<81.0.0",
-    "cmake>=3.29.0.1,<4.2.0",
-    "einops>=0.8.0,<0.9.0",
-    "opencv-python-headless>=4.9.0,<4.13.0",
-    "av>=15.0.0,<16.0.0",
-    "jsonlines>=4.0.0,<5.0.0",
-    "packaging>=24.2,<26.0",
-    "pynput>=1.7.7,<1.9.0",
-    "pyserial>=3.5,<4.0",
-    "wandb>=0.24.0,<0.25.0",
-
-    "torch>=2.2.1,<2.8.0", # TODO: Bumb dependency
-    "torchcodec>=0.2.1,<0.6.0; sys_platform != 'win32' and (sys_platform != 'linux' or (platform_machine != 'aarch64' and platform_machine != 'arm64' and platform_machine != 'armv7l')) and (sys_platform != 'darwin' or platform_machine != 'x86_64')", # TODO: Bumb dependency
-    "torchvision>=0.21.0,<0.23.0", # TODO: Bumb dependency
-
-    "draccus==0.10.0", # TODO: Remove ==
-    # Remove unsued
-    # "gymnasium>=1.1.1,<2.0.0",
-    # "rerun-sdk>=0.24.0,<0.27.0",
-
-    # Support dependencies
-    "deepdiff>=7.0.1,<9.0.0",
-    "imageio[ffmpeg]>=2.34.0,<3.0.0",
-    "termcolor>=2.4.0,<4.0.0",
-]
-
 [tool.uv.sources]
 openpi-client = { workspace = true }
-dlimp = { git = "https://github.com/kvablack/dlimp", rev = "ad72ce3a9b414db2185bc0b38461d4101a65477a" }
+lerobot-robot-ure = { path = "../../../colcon_ws/src/leros2/examples/lerobot_robot_ure", editable = true }
 
 [tool.uv.workspace]
 members = ["packages/*"]
@@ -173,3 +134,40 @@ build-backend = "hatchling.build"
 [tool.pytest.ini_options]
 markers = ["manual: should be run manually."]
 testpaths = ["src", "scripts", "packages"]
+
+[[tool.uv.dependency-metadata]]
+name = "lerobot"
+version = "0.4.3"  # Match the version you are installing
+requires-dist = [
+  # Hugging Face dependencies
+    "datasets>=4.0.0,<4.2.0",
+    "diffusers>=0.27.2,<0.36.0",
+    "huggingface-hub[hf-transfer,cli]>=0.34.2,<0.36.0",
+    "accelerate>=1.10.0,<2.0.0",
+
+    # Core dependencies
+    "setuptools>=71.0.0,<81.0.0",
+    "cmake>=3.29.0.1,<4.2.0",
+    "einops>=0.8.0,<0.9.0",
+    "opencv-python-headless>=4.9.0,<4.13.0",
+    "av>=15.0.0,<16.0.0",
+    "jsonlines>=4.0.0,<5.0.0",
+    "packaging>=24.2,<26.0",
+    "pynput>=1.7.7,<1.9.0",
+    "pyserial>=3.5,<4.0",
+    "wandb>=0.24.0,<0.25.0",
+
+    "torch>=2.2.1,<2.8.0", # TODO: Bumb dependency
+    "torchcodec>=0.2.1,<0.6.0; sys_platform != 'win32' and (sys_platform != 'linux' or (platform_machine != 'aarch64' and platform_machine != 'arm64' and platform_machine != 'armv7l')) and (sys_platform != 'darwin' or platform_machine != 'x86_64')", # TODO: Bumb dependency
+    "torchvision>=0.21.0,<0.23.0", # TODO: Bumb dependency
+
+    "draccus==0.10.0", # TODO: Remove ==
+    # Remove unsued
+    # "gymnasium>=1.1.1,<2.0.0",
+    # "rerun-sdk>=0.24.0,<0.27.0",
+
+    # Support dependencies
+    "deepdiff>=7.0.1,<9.0.0",
+    "imageio[ffmpeg]>=2.34.0,<3.0.0",
+    "termcolor>=2.4.0,<4.0.0",
+]
