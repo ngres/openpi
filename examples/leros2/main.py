@@ -1,3 +1,4 @@
+from time import sleep
 import dataclasses
 import logging
 
@@ -16,7 +17,7 @@ class Args:
     host: str = "0.0.0.0"
     port: int = 8000
 
-    action_horizon: int = 25
+    action_horizon: int = 10
 
     num_episodes: int = 1
     max_episode_steps: int = 1000
@@ -35,6 +36,8 @@ def main(args: Args) -> None:
 
     robot.connect()
 
+    sleep(3)
+
     runtime = _runtime.Runtime(
         environment=_env.LeRobotEnvironment(robot=robot),
         agent=_policy_agent.PolicyAgent(
@@ -44,7 +47,7 @@ def main(args: Args) -> None:
             )
         ),
         subscribers=[],
-        max_hz=50,
+        max_hz=10,
         num_episodes=args.num_episodes,
         max_episode_steps=args.max_episode_steps,
     )

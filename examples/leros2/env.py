@@ -1,5 +1,6 @@
 from openpi_client.runtime import environment as _environment
 from lerobot.robots import Robot
+import numpy as np
 
 
 class LeRobotEnvironment(_environment.Environment):
@@ -31,17 +32,20 @@ class LeRobotEnvironment(_environment.Environment):
     def get_observation(self) -> dict:
         """Query the environment for the current state."""
         obs_dict = self._robot.get_observation()
-        obs = {
-            "state": [],
-            "images": {},
-        }
+        state = []
+        images = {}
         for feature in self.observation_features:
-            if isinstance(obs_dict[feature], tuple):
-                obs["images"][feature] = obs_dict[feature]
+            if isinstance(self.observation_features[feature], tuple):
+                # flip images by 180°
+                images[feature] = obs_dict[feature][::-1, ::-1]
             else:
-                obs["state"].append(obs_dict[feature])
-        assert len(obs["images"]) >= 1  # at least one image needs to be included in the robot observation
-        return obs
+                state.append(obs_dict[feature])
+        assert len(images.keys()) >= 1  # at least one image needs to be included in the robot observation
+        
+        return {
+            "state": np.array(state),
+            "images": images
+        }
 
     def apply_action(self, action: dict) -> None:
         """Take an action in the environment."""
@@ -53,4 +57,5 @@ class LeRobotEnvironment(_environment.Environment):
             )
         for idx, feature in enumerate(self._action_features):
             action_dict[feature] = action_tensor[idx]
+        print("actions", action_dict)
         self._robot.send_action(action_dict)
