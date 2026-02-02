@@ -47,7 +47,7 @@ class LeROS2Inputs(transforms.DataTransformFn):
         inputs = {
             # We ignore the joint states and only use the base position and orientation + gripper state
             # [x.pos, y.pos, z.pos, x.quat, y.quat, z.quat, w.quat, gripper_state]
-            "state": data["state"][..., :8],
+            "state": data["state"][:8],
             "image": {
                 "base_0_rgb": base_image,
                 "left_wrist_0_rgb": wrist_image,
@@ -90,4 +90,4 @@ class LeROS2Outputs(transforms.DataTransformFn):
         # dimension, we need to now parse out the correct number of actions in the return dict.
         # For LeRobot, we only return the first 7 actions (since the rest is padding).
         # For your own dataset, replace `7` with the action dimension of your dataset.
-        return {"actions": np.asarray(data["actions"][:, :7])}
+        return {"actions": np.asarray(data["actions"][:, :8])}

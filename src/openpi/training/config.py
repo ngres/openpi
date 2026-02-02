@@ -12,6 +12,7 @@ import etils.epath as epath
 import flax.nnx as nnx
 from typing_extensions import override
 import tyro
+import numpy as np
 
 import openpi.models.model as _model
 import openpi.models.pi0_config as pi0_config
@@ -480,7 +481,10 @@ class LeROS2DataConfig(DataConfigFactory):
         delta_action_mask = _transforms.make_bool_mask(6, -1)
         data_transforms = data_transforms.push(
             inputs=[_transforms.DeltaActions(delta_action_mask)],
-            outputs=[_transforms.AbsoluteActions(delta_action_mask)],
+            outputs=[
+                _transforms.AbsoluteActions(delta_action_mask),
+                _transforms.ScaleActions(scale=np.full(3, 0.1)),
+            ],
         )
 
         # Model transforms include things like tokenizing the prompt and action targets
@@ -717,20 +721,24 @@ _CONFIGS = [
     # Fine-tuning LeROS2 configs
     TrainConfig(
         name="pi05_leros2",
-        data=LeROS2DataConfig(repo_id="ngres/leros2-ur10e-ycb-cube", base_config=DataConfig(prompt_from_task=False)),
+        data=LeROS2DataConfig(repo_id="physical-intelligence/libero", base_config=DataConfig(prompt_from_task=False)),
         model=pi0_config.Pi0Config(
-            paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora", pi05=True
+            pi05=True,
+            action_horizon=10,
+            discrete_state_input=False,
+            #    paligemma_variant="gemma_2b_lora",
+            #    action_expert_variant="gemma_300m_lora",
         ),
         # The freeze filter defines which parameters should be frozen during training.
         # We have a convenience function in the model config that returns the default freeze filter
         # for the given model config for LoRA finetuning. Just make sure it matches the model config
         # you chose above.
-        freeze_filter=pi0_config.Pi0Config(
-            paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora", pi05=True
-        ).get_freeze_filter(),
+        # freeze_filter=pi0_config.Pi0Config(
+        #     paligemma_variant="gemma_2b_lora", action_expert_variant="gemma_300m_lora", pi05=True
+        #  ).get_freeze_filter(),
         # Turn off EMA for LoRA finetuning.
-        ema_decay=None,
-        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
+        # ema_decay=None,
+        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_libero/params"),
         num_train_steps=20_000,
         batch_size=32,  # 32 works on the 5090 - may set it to 64 on the A100
     ),

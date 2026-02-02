@@ -150,3 +150,17 @@ def test_quat_to_r6d():
         np.array([_norm_quat(q) for q in quat["actions"]]),
         np.array([_norm_quat(q) for q in data]),
     )
+
+
+def test_scale_actions():
+    transform = _transforms.ScaleActions(scale=np.array([2, 1, 0]))
+    data = np.array(
+        [
+            [
+                [1, 2, 3, 6],
+                [4, 5, 6, 7],
+            ]
+        ]
+    )
+    scaled = transform({"actions": data})
+    assert np.allclose(scaled["actions"], np.array([[[2, 2, 0, 6], [8, 5, 0, 7]]]))

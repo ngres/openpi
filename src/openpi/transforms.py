@@ -249,6 +249,20 @@ class SpaceTransformFn(DataTransformFn, abc.ABC):
 
 
 @dataclasses.dataclass(frozen=True)
+class ScaleActions(DataTransformFn):
+    """Rescales the action or state space given a specific range"""
+
+    scale: np.ndarray
+
+    def __call__(self, data: DataDict) -> DataDict:
+        if "actions" not in data:
+            return data
+        dims = self.scale.shape[-1]
+        data["actions"][..., :dims] *= self.scale
+        return data
+
+
+@dataclasses.dataclass(frozen=True)
 class QuatToAxisAngle(SpaceTransformFn):
     """Repacks quaternion actions into a axis-angle space.
 

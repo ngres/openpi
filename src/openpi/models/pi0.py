@@ -267,8 +267,9 @@ class Pi0(_model.BaseModel):
             )
             assert prefix_out is None
             v_t = self.action_out_proj(suffix_out[:, -self.action_horizon :])
-
-            return x_t + dt * v_t, time + dt
+            x_next = x_t + dt * v_t
+            jax.debug.print("x_next: {x_next}", x_next=x_next)
+            return x_next, time + dt
 
         def cond(carry):
             x_t, time = carry

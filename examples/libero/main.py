@@ -11,6 +11,7 @@ from libero.libero.envs import OffScreenRenderEnv
 import numpy as np
 from openpi_client import image_tools
 from openpi_client import websocket_client_policy as _websocket_client_policy
+import csv
 import tqdm
 import tyro
 
@@ -50,6 +51,27 @@ class Args:
 
     rerun_out_path: str = "data/rerun/recordings"
 
+    csv_out_path: str = "data/libero/logs.csv"  # Path to save CSV logs
+
+
+class CsvLogger:
+    def __init__(self, path: str):
+        self.path = pathlib.Path(path)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.file = open(self.path, "w", newline="")
+        self.writer = csv.writer(self.file)
+        self.header_written = False
+
+    def log(self, data: dict):
+        if not self.header_written:
+            self.writer.writerow(data.keys())
+            self.header_written = True
+        self.writer.writerow(data.values())
+        self.file.flush()
+
+    def close(self):
+        self.file.close()
+
 
 def eval_libero(args: Args) -> None:
     # Set random seed
@@ -62,7 +84,10 @@ def eval_libero(args: Args) -> None:
     logging.info(f"Task suite: {args.task_suite_name}")
 
     pathlib.Path(args.video_out_path).mkdir(parents=True, exist_ok=True)
+    pathlib.Path(args.video_out_path).mkdir(parents=True, exist_ok=True)
     pathlib.Path(args.rerun_out_path).mkdir(parents=True, exist_ok=True)
+
+    csv_logger = CsvLogger(args.csv_out_path)
 
     if args.task_suite_name == "libero_spatial":
         max_steps = 220  # longest training demo has 193 steps
@@ -164,6 +189,32 @@ def eval_libero(args: Args) -> None:
 
                     action = action_plan.popleft()
 
+                    # Log to CSV
+                    csv_data = {
+                        "task_suite_name": args.task_suite_name,
+                        "task_id": task_id,
+                        "task_description": task_description,
+                        "episode_idx": task_episodes,
+                        "step_idx": t,
+                        "state_eef_pos_x": obs["robot0_eef_pos"][0],
+                        "state_eef_pos_y": obs["robot0_eef_pos"][1],
+                        "state_eef_pos_z": obs["robot0_eef_pos"][2],
+                        "state_eef_quat_x": obs["robot0_eef_quat"][0],
+                        "state_eef_quat_y": obs["robot0_eef_quat"][1],
+                        "state_eef_quat_z": obs["robot0_eef_quat"][2],
+                        "state_eef_quat_w": obs["robot0_eef_quat"][3],
+                    }
+
+                    # Flatten gripper qpos
+                    for i, q in enumerate(obs["robot0_gripper_qpos"]):
+                        csv_data[f"state_gripper_qpos_{i}"] = q
+
+                    # Flatten action
+                    for i, a in enumerate(action):
+                        csv_data[f"action_{i}"] = a
+
+                    csv_logger.log(csv_data)
+
                     # Execute action in environment
                     obs, reward, done, info = env.step(action.tolist())
                     if done:
@@ -224,6 +275,8 @@ def eval_libero(args: Args) -> None:
 
     logging.info(f"Total success rate: {float(total_successes) / float(total_episodes)}")
     logging.info(f"Total episodes: {total_episodes}")
+
+    csv_logger.close()
 
 
 def _get_libero_env(task, resolution, seed):
