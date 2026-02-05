@@ -482,8 +482,8 @@ class LeROS2DataConfig(DataConfigFactory):
         data_transforms = data_transforms.push(
             inputs=[_transforms.DeltaActions(delta_action_mask)],
             outputs=[
-                _transforms.ScaleActions(scale=np.full(3, 0.1)),
-                # _transforms.AbsoluteActions(delta_action_mask),
+                # _transforms.ScaleActions(scale=np.full(3, 0.1)),
+                _transforms.AbsoluteActions(delta_action_mask),
             ],
         )
 
