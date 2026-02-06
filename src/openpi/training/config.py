@@ -1,5 +1,7 @@
 """See _CONFIGS for the list of available configs."""
 
+from enum import Enum
+
 import abc
 from collections.abc import Sequence
 import dataclasses
@@ -425,11 +427,19 @@ class RLDSDroidDataConfig(DataConfigFactory):
         )
 
 
+class OrientationRepresentation(Enum):
+    R6D = "r6d"
+    QUATERNION = "quaternion"
+    AXIS_ANGLE = "axis_angle"
+
+
 @dataclasses.dataclass(frozen=True)
 class LeROS2DataConfig(DataConfigFactory):
     """
     LeROS2 LeRobot datasets.
     """
+
+    orientation_representation: OrientationRepresentation = OrientationRepresentation.AXIS_ANGLE
 
     @override
     def create(self, assets_dirs: pathlib.Path, model_config: _model.BaseModelConfig) -> DataConfig:
@@ -468,11 +478,31 @@ class LeROS2DataConfig(DataConfigFactory):
             outputs=[leros2_policy.LeROS2Outputs()],
         )
 
-        # Convert quaternion to axis angle to align with libero
-        data_transforms = data_transforms.push(
-            inputs=[_transforms.QuatToAxisAngle(action_index=3, state_index=3)],
-            outputs=[_transforms.AxisAngleToQuat(action_index=3, state_index=3)],
-        )
+        action_orientation_index = 3  # the 4th action is the first quaternion component
+        state_orientation_index = 3  # the 4th state is the first quaternion component
+
+        if self.orientation_representation == OrientationRepresentation.AXIS_ANGLE:
+            data_transforms = data_transforms.push(
+                inputs=[
+                    _transforms.QuatToAxisAngle(
+                        action_index=action_orientation_index, state_index=state_orientation_index
+                    )
+                ],
+                outputs=[
+                    _transforms.AxisAngleToQuat(
+                        action_index=action_orientation_index, state_index=state_orientation_index
+                    )
+                ],
+            )
+        elif self.orientation_representation == OrientationRepresentation.R6D:
+            data_transforms = data_transforms.push(
+                inputs=[
+                    _transforms.QuatToR6D(action_index=action_orientation_index, state_index=state_orientation_index)
+                ],
+                outputs=[
+                    _transforms.R6DToQuat(action_index=action_orientation_index, state_index=state_orientation_index)
+                ],
+            )
 
         # One additional data transform: pi0 models are trained on delta actions (relative to the first
         # state in each action chunk). IF your data has ``absolute`` actions (e.g. target joint angles)
@@ -481,10 +511,7 @@ class LeROS2DataConfig(DataConfigFactory):
         delta_action_mask = _transforms.make_bool_mask(6, -1)
         data_transforms = data_transforms.push(
             inputs=[_transforms.DeltaActions(delta_action_mask)],
-            outputs=[
-                # _transforms.ScaleActions(scale=np.full(3, 0.1)),
-                _transforms.AbsoluteActions(delta_action_mask),
-            ],
+            outputs=[_transforms.AbsoluteActions(delta_action_mask)],
         )
 
         # Model transforms include things like tokenizing the prompt and action targets
@@ -720,13 +747,15 @@ _CONFIGS = [
     ),
     # Fine-tuning LeROS2 configs
     TrainConfig(
-        name="pi05_leros2",
+        name="pi05_leros2_aa",
         data=LeROS2DataConfig(
-            repo_id="ngres/leros2-ur10e-ycb-cube-base", base_config=DataConfig(prompt_from_task=False)
+            orientation_representation=OrientationRepresentation.AXIS_ANGLE,
+            repo_id="ngres/leros2-ur10e-ycb-cube-base",
+            base_config=DataConfig(prompt_from_task=False),
         ),
         model=pi0_config.Pi0Config(
             pi05=True,
-            action_horizon=30,
+            action_horizon=50,
             discrete_state_input=False,
             paligemma_variant="gemma_2b_lora",
             action_expert_variant="gemma_300m_lora",
@@ -737,7 +766,7 @@ _CONFIGS = [
         # you chose above.
         freeze_filter=pi0_config.Pi0Config(
             pi05=True,
-            action_horizon=30,
+            action_horizon=50,
             discrete_state_input=False,
             paligemma_variant="gemma_2b_lora",
             action_expert_variant="gemma_300m_lora",
@@ -746,7 +775,38 @@ _CONFIGS = [
         ema_decay=None,
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
         num_train_steps=20_000,
-        batch_size=32,  # 32 works on the 5090 - may set it to 64 on the A100
+        batch_size=64,  # 32 works on the 5090 - may set it to 64 on the A100
+    ),
+    TrainConfig(
+        name="pi05_leros2_r6d",
+        data=LeROS2DataConfig(
+            orientation_representation=OrientationRepresentation.R6D,
+            repo_id="ngres/leros2-ur10e-ycb-cube-base",
+            base_config=DataConfig(prompt_from_task=False),
+        ),
+        model=pi0_config.Pi0Config(
+            pi05=True,
+            action_horizon=50,
+            discrete_state_input=False,
+            paligemma_variant="gemma_2b_lora",
+            action_expert_variant="gemma_300m_lora",
+        ),
+        # The freeze filter defines which parameters should be frozen during training.
+        # We have a convenience function in the model config that returns the default freeze filter
+        # for the given model config for LoRA finetuning. Just make sure it matches the model config
+        # you chose above.
+        freeze_filter=pi0_config.Pi0Config(
+            pi05=True,
+            action_horizon=50,
+            discrete_state_input=False,
+            paligemma_variant="gemma_2b_lora",
+            action_expert_variant="gemma_300m_lora",
+        ).get_freeze_filter(),
+        # Turn off EMA for LoRA finetuning.
+        ema_decay=None,
+        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
+        num_train_steps=20_000,
+        batch_size=64,  # 32 works on the 5090 - may set it to 64 on the A100
     ),
     #
     # Fine-tuning Libero configs.

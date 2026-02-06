@@ -7,6 +7,19 @@ from openpi import transforms
 from openpi.models import model as _model
 
 
+def make_leros2_example() -> dict:
+    """Creates a random input example for the LeROS2 policy."""
+    return {
+        "state": np.array([1.0, 2.0, 3.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]),
+        "images": {
+            "base": np.random.randint(256, size=(224, 224, 3), dtype=np.uint8),
+            "wrist": np.random.randint(256, size=(224, 224, 3), dtype=np.uint8),
+        },
+        "prompt": "do something",
+        "actions": np.array([[1.0, 2.0, 3.0, 0.0, 0.0, 0.0, 1.0, 1.0], [1.0, 2.0, 3.0, 0.0, 0.0, 0.0, 1.0, 1.0]]),
+    }
+
+
 def _parse_image(image) -> np.ndarray:
     image = np.asarray(image)
     if np.issubdtype(image.dtype, np.floating):

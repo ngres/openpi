@@ -1584,18 +1584,14 @@ source = { editable = "../../../colcon_ws/src/leros2" }
 dependencies = [
     { name = "black" },
     { name = "cv-bridge" },
-    { name = "draccus" },
     { name = "lerobot" },
-    { name = "numpy" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "black", specifier = ">=25.11.0" },
     { name = "cv-bridge", specifier = ">=1.13.0.post0" },
-    { name = "draccus", specifier = ">=0.10.0" },
-    { name = "lerobot", specifier = ">=0.4.2,<0.4.3" },
-    { name = "numpy", specifier = "<2.0.0" },
+    { name = "lerobot", specifier = ">=0.4.2" },
 ]
 
 [[package]]

@@ -6,6 +6,7 @@ from openpi.models import pi0_config
 from openpi.training import config as _config
 from openpi.training import data_loader as _data_loader
 
+
 def test_lerobot_v3_loading_from_hub():
     config = _config.get_config("pi05_ur10e")
     config = dataclasses.replace(config, batch_size=4)
@@ -23,4 +24,3 @@ def test_lerobot_v3_loading_from_hub():
     batches = list(loader)
 
     print(batches[0][0])
-    

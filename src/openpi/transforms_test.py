@@ -1,8 +1,11 @@
+from fontTools.t1Lib import assertType1
 import numpy as np
 import pytest
 
 import openpi.models.tokenizer as _tokenizer
 import openpi.transforms as _transforms
+import openpi.training.config as _config
+from openpi.policies.leros2_policy import make_leros2_example
 
 from scipy.spatial.transform import Rotation as R
 
@@ -164,3 +167,22 @@ def test_scale_actions():
     )
     scaled = transform({"actions": data})
     assert np.allclose(scaled["actions"], np.array([[[2, 2, 0, 6], [8, 5, 0, 7]]]))
+
+
+def test_data_transform_e2e():
+    input_example = make_leros2_example()
+    train_config = _config.get_config("pi05_leros2")
+    data_config = train_config.data.create(train_config.assets_dirs, train_config.model)
+    input_transform = _transforms.CompositeTransform(data_config.data_transforms.inputs)
+    transformed_input = input_transform(input_example)
+    assert transformed_input["state"].shape == (7,)  # Remove one state dimension (quat to axis angles)
+    assert transformed_input["actions"].shape == (2, 7)  # Remove one action dimension
+    assert transformed_input["state"][6] == input_example["state"][7]  # Keep the gripper invariant
+    assert transformed_input["actions"][0, 6] == input_example["actions"][0, 7]  # Keep the gripper invariant
+    assert transformed_input["actions"][1, 6] == input_example["actions"][1, 7]  # Keep the gripper invariant
+
+    output_transform = _transforms.CompositeTransform(data_config.data_transforms.outputs)
+    transformed_output = output_transform(transformed_input)
+    assert transformed_output["actions"].shape == (2, 8)  # Add one action dimension
+    assert transformed_output["actions"][0, 7] == input_example["actions"][0, 7]  # Keep the gripper invariant
+    assert transformed_output["actions"][1, 7] == input_example["actions"][1, 7]  # Keep the gripper invariant
