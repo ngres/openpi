@@ -2,7 +2,7 @@
 
 # Compute norm stats
 if [ "$SKIP_STATS" != "true" ]; then
-    uv run /app/scripts/compute_norm_stats.py --config-name $TRAIN_CONFIG --exp-name $EXP_NAME || exit 1
+    uv run /app/scripts/compute_norm_stats.py --config-name $TRAIN_CONFIG || exit 1
 fi
 
 # Train
