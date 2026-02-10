@@ -76,7 +76,7 @@ DEFAULT_CHECKPOINT: dict[EnvMode, Checkpoint] = {
     ),
     EnvMode.LEROS2: Checkpoint(
         config="pi05_leros2",
-        dir="./checkpoints/pi05_leros2/leros2_ws/17000",
+        dir="./checkpoints/pi05_leros2_aa/pi05_leros2_aa/19999",
     ),
 }
 
