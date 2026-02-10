@@ -59,5 +59,4 @@ class LeRobotEnvironment(_environment.Environment):
             )
         for idx, feature in enumerate(self._action_features):
             action_dict[feature] = action_tensor[idx]
-        print("actions", action_dict)
         self._robot.send_action(action_dict)

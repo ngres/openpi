@@ -1569,7 +1569,7 @@ wheels = [
 [[package]]
 name = "lerobot-robot-ure"
 version = "0.1.0"
-source = { git = "https://github.com/Nico0302/leros2.git?subdirectory=examples%2Flerobot_robot_ure#26230302af0ff1d96752b3476763f917d021c1fa" }
+source = { git = "https://github.com/Nico0302/leros2.git?subdirectory=examples%2Flerobot_robot_ure#db04c957e8e5a148ed847a1f1de1a6865e36cecc" }
 dependencies = [
     { name = "leros2" },
 ]
@@ -1577,7 +1577,7 @@ dependencies = [
 [[package]]
 name = "leros2"
 version = "0.1.0"
-source = { git = "https://github.com/Nico0302/leros2.git#26230302af0ff1d96752b3476763f917d021c1fa" }
+source = { git = "https://github.com/Nico0302/leros2.git#db04c957e8e5a148ed847a1f1de1a6865e36cecc" }
 dependencies = [
     { name = "black" },
     { name = "cv-bridge" },

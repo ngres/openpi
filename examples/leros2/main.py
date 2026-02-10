@@ -17,10 +17,10 @@ class Args:
     host: str = "0.0.0.0"
     port: int = 8000
 
-    action_horizon: int = 10
+    action_horizon: int = 50
 
     num_episodes: int = 1
-    max_episode_steps: int = 1000
+    max_episode_steps: int = 10000
 
 
 def main(args: Args) -> None:
@@ -36,7 +36,7 @@ def main(args: Args) -> None:
 
     robot.connect()
 
-    sleep(3)
+    sleep(2)
 
     runtime = _runtime.Runtime(
         environment=_env.LeRobotEnvironment(robot=robot),

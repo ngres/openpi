@@ -775,7 +775,7 @@ _CONFIGS = [
         ema_decay=None,
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
         num_train_steps=20_000,
-        batch_size=32,  # 32 works on the 5090 - may set it to 64 on the A100
+        batch_size=64,  # 32 works on the 5090 - may set it to 64 on the A100
     ),
     TrainConfig(
         name="pi05_leros2_r6d",
@@ -806,7 +806,7 @@ _CONFIGS = [
         ema_decay=None,
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
         num_train_steps=20_000,
-        batch_size=32,  # 32 works on the 5090 - may set it to 64 on the A100
+        batch_size=64,  # 32 works on the 5090 - may set it to 64 on the A100
     ),
     #
     # Fine-tuning Libero configs.
