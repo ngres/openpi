@@ -37,6 +37,10 @@ class Runtime:
         # Final reset, this is important for real environments to move the robot to its home position.
         self._environment.reset()
 
+    def stop(self) -> None:
+        """Stops the runtime loop."""
+        self._in_episode = False
+
     def run_in_new_thread(self) -> threading.Thread:
         """Runs the runtime loop in a new thread."""
         thread = threading.Thread(target=self.run)

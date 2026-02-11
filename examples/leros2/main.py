@@ -38,8 +38,10 @@ def main(args: Args) -> None:
 
     sleep(2)
 
+    le_robot_env = _env.LeRobotEnvironment(robot=robot)
+
     runtime = _runtime.Runtime(
-        environment=_env.LeRobotEnvironment(robot=robot),
+        environment=le_robot_env,
         agent=_policy_agent.PolicyAgent(
             policy=action_chunk_broker.ActionChunkBroker(
                 policy=ws_client_policy,

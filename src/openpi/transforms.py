@@ -373,6 +373,17 @@ class QuatToR6D(SpaceTransformFn):
 
 
 @dataclasses.dataclass(frozen=True)
+class DebugAction(DataTransformFn):
+    """Debug print transform."""
+
+    index: int
+
+    def __call__(self, data: DataDict) -> DataDict:
+        print(np.round(data["actions"][..., self.index], 2))
+        return data
+
+
+@dataclasses.dataclass(frozen=True)
 class R6DToQuat(SpaceTransformFn):
     """Repacks the first two columns of a rotation matrix into a quaternion space.
 

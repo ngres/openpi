@@ -9,10 +9,21 @@ class LeRobotEnvironment(_environment.Environment):
     def __init__(
         self,
         robot: Robot,
+        prompt: str = "Pick up the red cube and put it in the green cup.",
     ) -> None:
         self._robot = robot
+        self._prompt = prompt
+
         self.observation_features = robot.observation_features
         self._action_features = robot.action_features
+
+    @property
+    def prompt(self) -> str:
+        return self._prompt
+
+    @prompt.setter
+    def prompt(self, prompt: str) -> None:
+        self._prompt = prompt
 
     def reset(self) -> None:
         """Reset the environment to its initial state.
@@ -36,16 +47,15 @@ class LeRobotEnvironment(_environment.Environment):
         images = {}
         for feature in self.observation_features:
             if isinstance(self.observation_features[feature], tuple):
-                # flip images by 180°
-                # images[feature] = obs_dict[feature][::-1, ::-1]
                 images[feature] = obs_dict[feature]
             else:
                 state.append(obs_dict[feature])
         assert len(images.keys()) >= 1  # at least one image needs to be included in the robot observation
-        
+
         return {
             "state": np.array(state),
-            "images": images
+            "images": images,
+            "prompt": self._prompt,
         }
 
     def apply_action(self, action: dict) -> None:
