@@ -750,7 +750,7 @@ _CONFIGS = [
         name="pi05_leros2_aa",
         data=LeROS2DataConfig(
             orientation_representation=OrientationRepresentation.AXIS_ANGLE,
-            repo_id="ngres/leros2-ur10e-ycb-cube-base",
+            repo_id="ngres/ur10e-ycb-cube-vive",
             base_config=DataConfig(prompt_from_task=False),
         ),
         model=pi0_config.Pi0Config(
@@ -781,7 +781,7 @@ _CONFIGS = [
         name="pi05_leros2_r6d",
         data=LeROS2DataConfig(
             orientation_representation=OrientationRepresentation.R6D,
-            repo_id="ngres/leros2-ur10e-ycb-cube-base",
+            repo_id="ngres/ur10e-ycb-cube-vive",
             base_config=DataConfig(prompt_from_task=False),
         ),
         model=pi0_config.Pi0Config(
