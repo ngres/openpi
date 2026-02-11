@@ -8,7 +8,7 @@ from openpi.training import data_loader as _data_loader
 
 
 def test_lerobot_v3_loading_from_hub():
-    config = _config.get_config("pi05_ur10e")
+    config = _config.get_config("pi05_leros2_aa")
     config = dataclasses.replace(config, batch_size=4)
 
     loader = _data_loader.create_data_loader(

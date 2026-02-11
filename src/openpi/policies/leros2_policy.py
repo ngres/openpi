@@ -84,7 +84,7 @@ class LeROS2Inputs(transforms.DataTransformFn):
         # Keep this for your own dataset (but modify the key if the instruction is not
         # stored in "prompt"; the output dict always needs to have the key "prompt").
         if "prompt" in data:
-            inputs["prompt"] = data["prompt"]
+            inputs["prompt"] = "Pick up the green cube and drop it in the orange cup."  # data["prompt"]
 
         return inputs
 
