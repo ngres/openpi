@@ -36,7 +36,7 @@ def main(args: Args) -> None:
 
     robot.connect()
 
-    sleep(2)
+    sleep(4)
 
     le_robot_env = _env.LeRobotEnvironment(robot=robot)
 
@@ -49,7 +49,7 @@ def main(args: Args) -> None:
             )
         ),
         subscribers=[],
-        max_hz=30,
+        max_hz=50,
         num_episodes=args.num_episodes,
         max_episode_steps=args.max_episode_steps,
     )
