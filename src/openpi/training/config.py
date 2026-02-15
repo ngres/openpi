@@ -750,7 +750,7 @@ _CONFIGS = [
         name="pi05_leros2_aa",
         data=LeROS2DataConfig(
             orientation_representation=OrientationRepresentation.AXIS_ANGLE,
-            repo_id="ngres/ur10e-ycb-cube-spacemouse",
+            repo_id="ngres/ur10e-ycb-cube-vive-100",
             base_config=DataConfig(prompt_from_task=False),
         ),
         model=pi0_config.Pi0Config(
