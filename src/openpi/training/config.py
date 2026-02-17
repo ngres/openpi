@@ -620,7 +620,7 @@ class TrainConfig:
     # How often (in steps) to save checkpoints.
     save_interval: int = 1000
     # If set, any existing checkpoints matching step % keep_period == 0 will not be deleted.
-    keep_period: int | None = 5000
+    keep_period: int | None = 6000
 
     # If true, will overwrite the checkpoint directory if it already exists.
     overwrite: bool = False
@@ -750,7 +750,7 @@ _CONFIGS = [
         name="pi05_leros2_aa",
         data=LeROS2DataConfig(
             orientation_representation=OrientationRepresentation.AXIS_ANGLE,
-            repo_id="ngres/ur10e-ycb-cube-vive-100",
+            repo_id="ngres/ur10e-ycb-cube-vive-300",
             base_config=DataConfig(prompt_from_task=False),
         ),
         model=pi0_config.Pi0Config(
