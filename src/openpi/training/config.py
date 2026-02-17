@@ -778,6 +778,68 @@ _CONFIGS = [
         batch_size=64,  # 32 works on the 5090 - may set it to 64 on the A100
     ),
     TrainConfig(
+        name="pi05_leros2_stack",
+        data=LeROS2DataConfig(
+            orientation_representation=OrientationRepresentation.AXIS_ANGLE,
+            repo_id="ngres/ur10e-ycb-stack-200",
+            base_config=DataConfig(prompt_from_task=False),
+        ),
+        model=pi0_config.Pi0Config(
+            pi05=True,
+            action_horizon=50,
+            discrete_state_input=False,
+            paligemma_variant="gemma_2b_lora",
+            action_expert_variant="gemma_300m_lora",
+        ),
+        # The freeze filter defines which parameters should be frozen during training.
+        # We have a convenience function in the model config that returns the default freeze filter
+        # for the given model config for LoRA finetuning. Just make sure it matches the model config
+        # you chose above.
+        freeze_filter=pi0_config.Pi0Config(
+            pi05=True,
+            action_horizon=50,
+            discrete_state_input=False,
+            paligemma_variant="gemma_2b_lora",
+            action_expert_variant="gemma_300m_lora",
+        ).get_freeze_filter(),
+        # Turn off EMA for LoRA finetuning.
+        ema_decay=None,
+        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
+        num_train_steps=24_001,
+        batch_size=64,  # 32 works on the 5090 - may set it to 64 on the A100
+    ),
+    TrainConfig(
+        name="pi05_leros2_spacemouse",
+        data=LeROS2DataConfig(
+            orientation_representation=OrientationRepresentation.AXIS_ANGLE,
+            repo_id="ngres/ur10e-ycb-cube-spacemouse",
+            base_config=DataConfig(prompt_from_task=False),
+        ),
+        model=pi0_config.Pi0Config(
+            pi05=True,
+            action_horizon=50,
+            discrete_state_input=False,
+            paligemma_variant="gemma_2b_lora",
+            action_expert_variant="gemma_300m_lora",
+        ),
+        # The freeze filter defines which parameters should be frozen during training.
+        # We have a convenience function in the model config that returns the default freeze filter
+        # for the given model config for LoRA finetuning. Just make sure it matches the model config
+        # you chose above.
+        freeze_filter=pi0_config.Pi0Config(
+            pi05=True,
+            action_horizon=50,
+            discrete_state_input=False,
+            paligemma_variant="gemma_2b_lora",
+            action_expert_variant="gemma_300m_lora",
+        ).get_freeze_filter(),
+        # Turn off EMA for LoRA finetuning.
+        ema_decay=None,
+        weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
+        num_train_steps=24_001,
+        batch_size=64,  # 32 works on the 5090 - may set it to 64 on the A100
+    ),
+    TrainConfig(
         name="pi05_leros2_r6d",
         data=LeROS2DataConfig(
             orientation_representation=OrientationRepresentation.R6D,
