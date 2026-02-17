@@ -750,7 +750,7 @@ _CONFIGS = [
         name="pi05_leros2_aa",
         data=LeROS2DataConfig(
             orientation_representation=OrientationRepresentation.AXIS_ANGLE,
-            repo_id="ngres/ur10e-ycb-cube-vive-300",
+            repo_id="ngres/ur10e-ycb-stack-100",
             base_config=DataConfig(prompt_from_task=False),
         ),
         model=pi0_config.Pi0Config(
@@ -774,7 +774,7 @@ _CONFIGS = [
         # Turn off EMA for LoRA finetuning.
         ema_decay=None,
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
-        num_train_steps=18_001,
+        num_train_steps=24_001,
         batch_size=64,  # 32 works on the 5090 - may set it to 64 on the A100
     ),
     TrainConfig(
