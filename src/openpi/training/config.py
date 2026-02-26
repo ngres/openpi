@@ -750,7 +750,7 @@ _CONFIGS = [
         name="pi05_leros2_aa",
         data=LeROS2DataConfig(
             orientation_representation=OrientationRepresentation.AXIS_ANGLE,
-            repo_id="ngres/ur10e-ycb-stack-100",
+            repo_id="ngres/ur10e-ycb-cube-vive",
             base_config=DataConfig(prompt_from_task=False),
         ),
         model=pi0_config.Pi0Config(
@@ -781,7 +781,7 @@ _CONFIGS = [
         name="pi05_leros2_stack",
         data=LeROS2DataConfig(
             orientation_representation=OrientationRepresentation.AXIS_ANGLE,
-            repo_id="ngres/ur10e-ycb-stack-200",
+            repo_id="ngres/ur10e-ycb-stack-100b",
             base_config=DataConfig(prompt_from_task=False),
         ),
         model=pi0_config.Pi0Config(
@@ -812,7 +812,7 @@ _CONFIGS = [
         name="pi05_leros2_spacemouse",
         data=LeROS2DataConfig(
             orientation_representation=OrientationRepresentation.AXIS_ANGLE,
-            repo_id="ngres/ur10e-ycb-cube-spacemouse",
+            repo_id="ngres/ur10e-ycb-cube-spacemouse-100b",
             base_config=DataConfig(prompt_from_task=False),
         ),
         model=pi0_config.Pi0Config(
@@ -840,10 +840,10 @@ _CONFIGS = [
         batch_size=64,  # 32 works on the 5090 - may set it to 64 on the A100
     ),
     TrainConfig(
-        name="pi05_leros2_r6d",
+        name="pi05_leros2_stack_r6d",
         data=LeROS2DataConfig(
             orientation_representation=OrientationRepresentation.R6D,
-            repo_id="ngres/ur10e-ycb-cube-vive",
+            repo_id="ngres/ur10e-ycb-stack-200",
             base_config=DataConfig(prompt_from_task=False),
         ),
         model=pi0_config.Pi0Config(
@@ -867,7 +867,7 @@ _CONFIGS = [
         # Turn off EMA for LoRA finetuning.
         ema_decay=None,
         weight_loader=weight_loaders.CheckpointWeightLoader("gs://openpi-assets/checkpoints/pi05_base/params"),
-        num_train_steps=20_000,
+        num_train_steps=24_001,
         batch_size=64,  # 32 works on the 5090 - may set it to 64 on the A100
     ),
     #
