@@ -781,7 +781,7 @@ _CONFIGS = [
         name="pi05_leros2_stack",
         data=LeROS2DataConfig(
             orientation_representation=OrientationRepresentation.AXIS_ANGLE,
-            repo_id="ngres/ur10e-ycb-stack-100b_s1",
+            repo_id="ngres/ur10e-ycb-stack-200",
             base_config=DataConfig(prompt_from_task=False),
         ),
         model=pi0_config.Pi0Config(
