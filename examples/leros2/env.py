@@ -9,7 +9,7 @@ class LeRobotEnvironment(_environment.Environment):
     def __init__(
         self,
         robot: Robot,
-        prompt: str = "Pick up the green cube and drop it in the orange cup.",
+        prompt: str = "Insert the purple cup into the yellow one, then drop the red cup into the stack.", # "Pick up the green cube and drop it in the orange cup."
     ) -> None:
         self._robot = robot
         self._prompt = prompt

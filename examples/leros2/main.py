@@ -20,7 +20,7 @@ class Args:
     action_horizon: int = 50
 
     num_episodes: int = 1
-    max_episode_steps: int = 10000
+    max_episode_steps: int = 0
 
 
 def main(args: Args) -> None:
